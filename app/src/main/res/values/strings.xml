@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Card Simulator</string>
+    <string name="apdu_service_description">EMV Card Emulation Service</string>
+    <string name="aid_group_description">Payment Card AIDs</string>
+    <string name="tab_profiles">Profiles</string>
+    <string name="tab_log">Log</string>
+    <string name="tab_settings">Settings</string>
+</resources>
