@@ -8,6 +8,7 @@
 /.codewhale
 build.txt
 /.reasonix
+reasonix.toml
 .externalNativeBuild
 .cxx
 local.properties
