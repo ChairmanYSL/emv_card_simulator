@@ -27,9 +27,11 @@ interface ProfileDao {
     @Query("DELETE FROM profiles WHERE id = :id")
     suspend fun delete(id: String)
 
-    @Query("UPDATE profiles SET isActive = 0")
-    suspend fun deactivateAll()
-
-    @Query("UPDATE profiles SET isActive = 1 WHERE id = :id")
+    /**
+     * Atomically set one profile active and all others inactive in a single
+     * SQL statement, so there is never a window with zero or multiple active
+     * profiles.
+     */
+    @Query("UPDATE profiles SET isActive = CASE WHEN id = :id THEN 1 ELSE 0 END")
     suspend fun setActive(id: String)
 }

@@ -18,8 +18,11 @@ interface CryptoEngine {
      *
      * @param cdol1Data  Data built from CDOL1 (CDOL1 values populated from card data).
      * @param keyId      Identifier for the symmetric card key (MDK/UDK) to use.
-     * @param cryptogramType 0x80 = ARQC, 0x40 = TC, 0x00 = AAC
+     * @param cryptogramType 0x80 = ARQC, 0x40 = TC, 0x00 = AAC (validated).
      * @return 8-byte cryptogram + ATC + CVR (Cryptogram Information Data)
+     *
+     * The ATC is read, incremented and persisted by the implementation, so it
+     * never repeats across transactions.
      */
     suspend fun generateApplicationCryptogram(
         cdol1Data: ByteArray,

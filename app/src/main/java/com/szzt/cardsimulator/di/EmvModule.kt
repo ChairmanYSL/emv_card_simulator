@@ -9,7 +9,7 @@ import com.szzt.cardsimulator.emv.impl.DefaultEmvKernel
 import org.koin.dsl.module
 
 val emvModule = module {
-    single<CryptoEngine> { DefaultCryptoEngine() }
+    single<CryptoEngine> { DefaultCryptoEngine(get()) }
     single<CertificateProvider> { DefaultCertificateProvider() }
     single<EmvKernel> { DefaultEmvKernel(get(), get()) }
 }

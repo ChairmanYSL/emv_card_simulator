@@ -2,6 +2,7 @@ package com.szzt.cardsimulator.emv.api
 
 import com.szzt.cardsimulator.hce.model.ApduCommand
 import com.szzt.cardsimulator.hce.model.ApduResponse
+import com.szzt.cardsimulator.profile.model.CardProfile
 
 /**
  * EMV transaction kernel.
@@ -22,6 +23,16 @@ interface EmvKernel {
      * The AID currently selected, if any.
      */
     val selectedAid: ByteArray?
+
+    /**
+     * The profile currently driving this kernel, if any.
+     */
+    val activeProfile: CardProfile?
+
+    /**
+     * Set the profile that drives this kernel. Resets transaction state.
+     */
+    fun setProfile(profile: CardProfile)
 
     /**
      * Process a single APDU command and return the response.

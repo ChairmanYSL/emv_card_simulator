@@ -27,20 +27,23 @@ class DefaultEmvKernel(
     override var selectedAid: ByteArray? = null
         private set
 
-    private var activeProfile: CardProfile? = null
+    override val activeProfile: CardProfile?
+        get() = activeProfileInternal
+
+    private var activeProfileInternal: CardProfile? = null
 
     // Cached data built during transaction
     private var aipBytes: ByteArray? = null
     private var aflBytes: ByteArray? = null
     private var records: MutableMap<Int, MutableMap<Int, ByteArray>> = mutableMapOf() // SFI → RecordNum → Data
 
-    fun setProfile(profile: CardProfile) {
-        this.activeProfile = profile
+    override fun setProfile(profile: CardProfile) {
+        this.activeProfileInternal = profile
         reset()
     }
 
     override suspend fun processApdu(command: ApduCommand): ApduResponse {
-        val profile = activeProfile ?: return ApduResponse.FILE_NOT_FOUND
+        val profile = activeProfileInternal ?: return ApduResponse.FILE_NOT_FOUND
 
         return when {
             // SELECT (PPSE or AID)

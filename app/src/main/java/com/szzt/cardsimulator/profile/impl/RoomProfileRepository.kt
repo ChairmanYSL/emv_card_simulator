@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import timber.log.Timber
 
 class RoomProfileRepository(
     private val dao: ProfileDao
@@ -43,17 +44,27 @@ class RoomProfileRepository(
 
     override suspend fun delete(id: String) {
         dao.delete(id)
+        // If the deleted profile was active, no profile is active anymore —
+        // this matches the invariant "at most one active profile". The UI
+        // observes the change through observeActive().
     }
 
     override suspend fun setActive(id: String) {
-        dao.deactivateAll()
         dao.setActive(id)
     }
 
     override suspend fun importFromJson(jsonString: String): CardProfile {
         val profile = json.decodeFromString(CardProfile.serializer(), jsonString)
-        save(profile.copy(updatedAt = System.currentTimeMillis()))
-        return profile
+        val imported = if (profile.isActive) {
+            // Preserve the "only one active" invariant: activating an imported
+            // profile deactivates all others in the same atomic statement.
+            dao.setActive(profile.id)
+            profile.copy(isActive = true, updatedAt = System.currentTimeMillis())
+        } else {
+            profile.copy(updatedAt = System.currentTimeMillis())
+        }
+        dao.save(imported.toEntity())
+        return imported
     }
 
     override suspend fun exportToJson(id: String): String {
@@ -89,11 +100,25 @@ class RoomProfileRepository(
             symmetricKeyId = symmetricKeyId,
             rsaKeyId = rsaKeyId,
             certificateProfileId = certificateProfileId,
-            aids = json.decodeFromString(ListSerializer(AidConfig.serializer()), aidsJson),
-            cvmList = json.decodeFromString(ListSerializer(CvmEntry.serializer()), cvmListJson),
+            aids = decodeJsonList(aidsJson, ListSerializer(AidConfig.serializer()), "aids") ?: emptyList(),
+            cvmList = decodeJsonList(cvmListJson, ListSerializer(CvmEntry.serializer()), "cvmList") ?: emptyList(),
             createdAt = createdAt,
             updatedAt = updatedAt
         )
+    }
+
+    /**
+     * Decode a JSON column defensively: a single corrupt row must not crash
+     * the whole [observeAll] flow — it degrades to null (caller falls back
+     * to an empty list) instead.
+     */
+    private fun <T> decodeJsonList(raw: String, serializer: kotlinx.serialization.KSerializer<T>, column: String): T? {
+        return try {
+            json.decodeFromString(serializer, raw)
+        } catch (e: Exception) {
+            Timber.e(e, "Corrupt JSON column '$column' in profile row, degrading to empty")
+            null
+        }
     }
 
     private fun CardProfile.toEntity(): ProfileEntity {
